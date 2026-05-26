@@ -26,7 +26,7 @@ If you use this project for your research, please cite
 ```
 @inproceedings{pan2026gluemap,
     author={Pan, Linfei and Sch\"{o}nberger, Johannes Lutz and Pollefeys, Marc},
-    title={{Global Structure-from-Motion Meets Feedforward Reconstruction}},
+    title={Global Structure-from-Motion Meets Feedforward Reconstruction},
     booktitle={Conference on Computer Vision and Pattern Recognition (CVPR)},
     year={2026},
 }
