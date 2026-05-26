@@ -1,16 +1,16 @@
 # GLUEMAP: Global Structure-from-Motion Meets Feedforward Reconstruction
-[Project page](https://lpanaf.github.io/cvpr26_gluemap/) | [Paper](https://lpanaf.github.io/assets/pdf/cvpr26_gluemap.pdf)
+[Project page](https://lpanaf.github.io/cvpr26_gluemap/) | [Paper]([arxiv.org/abs/2605.26103](https://arxiv.org/abs/2605.26103))
 ---
 
 ## About
 
 GlueMap is the first Structure-from-Motion pipeline to integrate
 feed-forward reconstruction backbones into a global SfM framework.
-It takes a collection of images as input and output a COLMAP sparse reconstruction. 
-It matches the scalability and accuracy of traditional SfM pipelines while inheriting the local robustness of feed-forward backbone.
+It takes a collection of images as input and outputs a COLMAP sparse reconstruction. 
+It matches the scalability and accuracy of traditional SfM pipelines while inheriting the local robustness of a feed-forward backbone.
 It pairs their resilience on hard local geometry (low overlap, repetitive structures, weak texture) with the accuracy, global consistency, and large-scene tractability that classical SfM provides.
 
-The pipeline composes:
+The pipeline comprises:
 
 1. **Retrieval** — SALAD global descriptors build the image neighbor graph.
 2. **Two-view inference (optional)** — Doppelgangers++ (MAST3R-based) estimates covisibility of pairs. Can be skipped via `skip_doppelgangers` when the scene has no repetitive structure or when a quick result is preferred (see [Configuration](#configuration)).
