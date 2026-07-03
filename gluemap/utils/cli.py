@@ -48,7 +48,7 @@ def get_args_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--chosen_model",
         default="pi3",
-        choices=["pi3", "pi3x", "vggt", "map_anything"],
+        choices=["pi3", "pi3x", "vggt", "map_anything", "dvlt"],
         help="which model to use for multi-view pose estimation",
     )
 

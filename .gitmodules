@@ -13,3 +13,6 @@
 [submodule "thirdparty/mapanything"]
 	path = thirdparty/mapanything
 	url = https://github.com/facebookresearch/map-anything.git
+[submodule "thirdparty/dvlt"]
+	path = thirdparty/dvlt
+	url = https://github.com/nv-tlabs/dvlt.git

@@ -116,6 +116,18 @@ def load_models(
         models["map_anything"] = MapAnything.from_pretrained(
             args.path_feedforward
         )
+    elif chosen_model == "dvlt" and chosen_model in keys:
+        from accelerate import Accelerator
+        from dvlt.model.dvlt.model import DVLT
+
+        accelerator = Accelerator(mixed_precision="bf16")
+        models["dvlt"] = DVLT(img_size=518)
+        models["dvlt"].load_pretrained("nvidia/dvlt", strict=True)
+        models["dvlt"].model = accelerator.prepare(
+            models["dvlt"].model
+        )
+        models["dvlt"].setup_test(accelerator)
+        models["_dvlt_accelerator"] = accelerator
 
     # Load Doppelganger++
     if "dg" in keys:
@@ -186,8 +198,9 @@ def load_models(
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     for _model_name, model in models.items():
-        model.eval()
-        model.to(device)
+        if isinstance(model, torch.nn.Module):
+            model.eval()
+            model.to(device)
 
     if args.distributed:
         for model_name, model in models.items():

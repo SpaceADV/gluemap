@@ -4,7 +4,7 @@
 # All keys are flat and match cli.py / get_args_parser() arg names.
 
 # Model selection
-chosen_model: pi3   # pi3, pi3x, vggt, map_anything
+chosen_model: pi3   # pi3, pi3x, vggt, map_anything, dvlt
 
 # Model paths
 path_feedforward: checkpoints/pi3.safetensors

@@ -31,6 +31,7 @@ class BatchInferenceStar:
         model_track: torch.nn.Module | None = None,
         device: str = "cuda",
         dtype: torch.dtype = torch.bfloat16,
+        accelerator: object | None = None,
     ):
         self.model = model
         self.model_type = model_type
@@ -39,7 +40,7 @@ class BatchInferenceStar:
         self.dtype = dtype
 
         self.local_inference = create_local_inference(
-            model, model_type, device, dtype
+            model, model_type, device, dtype, accelerator=accelerator
         )
         self.track_inference = TrackInference(model_track, device)
         self.covisibility_extraction = CovisibilityExtraction()
@@ -200,6 +201,7 @@ class StarInferencePipeline(BaseInferencePipeline):
             models.get("vggsfm"),
             device=self.device,
             dtype=self.dtype,
+            accelerator=models.get("_dvlt_accelerator"),
         )
 
     def _run_batch_step(

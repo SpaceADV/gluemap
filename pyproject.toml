@@ -13,8 +13,8 @@ dependencies = [
     # Versions pinned to the known-good gluemap micromamba env.
     "numpy==2.4.3",
     "scipy==1.17.1",
-    "torch==2.4.1",
-    "torchvision==0.19.1",
+    "torch==2.5.1",
+    "torchvision==0.20.1",
     "pycolmap-cuda12==4.0.4",
     "pyceres==2.6",
     "h5py==3.16.0",
@@ -33,7 +33,8 @@ dependencies = [
     # to be available even though the repos themselves are not declared.
     "hydra-core==1.3.2",
     "omegaconf==2.3.0",
-    "huggingface_hub==1.12.0",
+    "accelerate>=1.8.1",
+    "huggingface_hub>=1.16.4",
     "opencv-python==4.13.0.92",
     "plyfile==1.1.3",
     "scikit-learn==1.8.0",

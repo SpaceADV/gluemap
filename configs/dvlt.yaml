@@ -1,0 +1,6 @@
+_base_: "base.yaml"
+
+# DVLT (Deja View) — loads weights from HuggingFace Hub.
+# path_feedforward is unused; weights are fetched from nvidia/dvlt.
+chosen_model: dvlt
+path_feedforward: ""

@@ -40,6 +40,7 @@ def create_local_inference(
     model_type: str,
     device: str | torch.device = "cuda",
     dtype: torch.dtype = torch.bfloat16,
+    accelerator: object | None = None,
 ) -> LocalInference:
     """Factory to create the appropriate :class:`LocalInference` subclass.
 
@@ -47,9 +48,11 @@ def create_local_inference(
         model: Loaded backbone network whose architecture matches
             ``model_type``.
         model_type: One of ``"pi3"``, ``"pi3x"``, ``"vggt"``,
-            ``"map_anything"``.
+            ``"map_anything"``, ``"dvlt"``.
         device: Device on which inputs are placed before the backbone runs.
         dtype: Autocast dtype used during the backbone forward pass.
+        accelerator: HuggingFace ``Accelerator`` instance required by DVLT;
+            ignored by other backends.
 
     Returns:
         A concrete :class:`LocalInference` subclass wrapping ``model``.
@@ -71,5 +74,9 @@ def create_local_inference(
         )
 
         return MapAnythingLocalInference(model, device, dtype)
+    elif model_type == "dvlt":
+        from gluemap.ff_inference.dvlt_inference import DVLTLocalInference
+
+        return DVLTLocalInference(model, device, dtype, accelerator=accelerator)
     else:
         raise ValueError(f"Unknown model_type: {model_type}")
