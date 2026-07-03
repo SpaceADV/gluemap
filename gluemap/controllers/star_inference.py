@@ -43,6 +43,7 @@ class BatchInferenceStar:
         self.low_vram = low_vram
         self.args = args
         self.accelerator = accelerator
+        self._backbone_on_gpu = False
 
         self.local_inference = create_local_inference(
             model, model_type, device, dtype, accelerator=accelerator
@@ -196,10 +197,14 @@ class BatchInferenceStar:
     ) -> tuple[dict, float, float]:
         """Sequential GPU swap of backbone and tracker.
 
-        Models are kept in CPU RAM and moved to GPU one at a time.
+        Backbone stays resident on GPU between batches. Only unloaded
+        temporarily during the tracker phase to free VRAM, then reloaded
+        for the next batch.
         """
-        # --- backbone: to GPU → run → back to CPU ---
-        self._reload_backbone()
+        # --- backbone: ensure on GPU, run inference ---
+        if not self._backbone_on_gpu:
+            self._reload_backbone()
+            self._backbone_on_gpu = True
 
         torch.cuda.synchronize()
         t0 = time.perf_counter()
@@ -207,11 +212,12 @@ class BatchInferenceStar:
         torch.cuda.synchronize()
         forward_time = time.perf_counter() - t0
 
-        self._unload_backbone()
-
-        # --- tracker: to GPU → run → back to CPU ---
+        # --- tracker: unload backbone to make room, run tracker, reload backbone ---
         track_time = 0.0
         if include_track:
+            self._unload_backbone()
+            self._backbone_on_gpu = False
+
             self._reload_tracker()
 
             torch.cuda.synchronize()
@@ -226,7 +232,16 @@ class BatchInferenceStar:
 
             self._unload_tracker()
 
+            self._reload_backbone()
+            self._backbone_on_gpu = True
+
         return predictions, forward_time, track_time
+
+    def unload_all(self) -> None:
+        """Free GPU memory by unloading all models."""
+        if self._backbone_on_gpu:
+            self._unload_backbone()
+            self._backbone_on_gpu = False
 
     def _run_track_inference(
         self,

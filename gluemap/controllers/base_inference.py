@@ -199,6 +199,10 @@ class BaseInferencePipeline(abc.ABC):
                     batch[self._index_key].cpu().numpy().tolist()
                 )
 
+        # Release any GPU-resident models (e.g. backbone in low-VRAM mode)
+        if hasattr(batch_inference, "unload_all"):
+            batch_inference.unload_all()
+
         return (
             all_outputs,
             all_indices,
