@@ -294,6 +294,14 @@ class GluemapPipeline:
             return coarse_dir, timing
 
         t0 = time.perf_counter()
+        # Reset CUDA context before COLMAP GPU operations — DVLT's fp16
+        # attention and low-VRAM swapping can corrupt GPU state.
+        if torch.cuda.is_available():
+            import gc
+            gc.collect()
+            torch.cuda.empty_cache()
+            torch.cuda.ipc_collect()
+            torch.cuda.synchronize()
         if not (
             hasattr(args, "force_load") and args.force_load
         ) or not os.path.exists(args.curr_path + "/database_sift.db"):
