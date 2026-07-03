@@ -1,6 +1,52 @@
-checkpoints/
-pybind_build/
-results/
-venv_gluemap/
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.egg-info/
+*.egg
+dist/
+build/
+*.so
+
+# Virtual environments
 .venv/
-*.pyc
+venv/
+venv_gluemap/
+
+# Checkpoints and large files
+checkpoints/
+results/
+
+# Build artifacts
+pybind_build/
+
+# Logs
+*.log
+.KUNAI.*
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Environment
+.env
+.env.*
+
+# Coverage / test
+.coverage
+htmlcov/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+thirdparty/doppelgangers-plusplus/dust3r/
