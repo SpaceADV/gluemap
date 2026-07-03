@@ -32,12 +32,17 @@ class BatchInferenceStar:
         device: str = "cuda",
         dtype: torch.dtype = torch.bfloat16,
         accelerator: object | None = None,
+        low_vram: bool = False,
+        args: argparse.Namespace | None = None,
     ):
         self.model = model
         self.model_type = model_type
         self.model_track = model_track
         self.device = device
         self.dtype = dtype
+        self.low_vram = low_vram
+        self.args = args
+        self.accelerator = accelerator
 
         self.local_inference = create_local_inference(
             model, model_type, device, dtype, accelerator=accelerator
@@ -125,6 +130,11 @@ class BatchInferenceStar:
                 " its output"
             )
 
+        if self.low_vram:
+            return self._predict_images_low_vram(
+                batch, use_dummy_tracks, include_track
+            )
+
         # Local inference (timed)
         torch.cuda.synchronize()
         t0 = time.perf_counter()
@@ -137,6 +147,84 @@ class BatchInferenceStar:
             batch, use_dummy_tracks, include_track
         )
         predictions.update(track_preds)
+
+        return predictions, forward_time, track_time
+
+    def _get_inner_model(self, model):
+        """Get the nn.Module from a model (handles DVLT wrapper)."""
+        if model is None:
+            return None
+        if isinstance(model, torch.nn.Module):
+            return model
+        if hasattr(model, "model") and isinstance(
+            model.model, torch.nn.Module
+        ):
+            return model.model
+        return None
+
+    def _unload_backbone(self) -> None:
+        """Move backbone from GPU to CPU RAM (fast swap, no disk I/O)."""
+        inner = self._get_inner_model(self.model)
+        if inner is not None:
+            inner.to("cpu")
+        torch.cuda.empty_cache()
+
+    def _reload_backbone(self) -> None:
+        """Move backbone from CPU RAM back to GPU."""
+        inner = self._get_inner_model(self.model)
+        if inner is not None:
+            inner.to(self.device)
+
+    def _unload_tracker(self) -> None:
+        """Move tracker from GPU to CPU RAM."""
+        inner = self._get_inner_model(self.model_track)
+        if inner is not None:
+            inner.to("cpu")
+        torch.cuda.empty_cache()
+
+    def _reload_tracker(self) -> None:
+        """Move tracker from CPU RAM back to GPU."""
+        inner = self._get_inner_model(self.model_track)
+        if inner is not None:
+            inner.to(self.device)
+
+    def _predict_images_low_vram(
+        self,
+        batch: dict,
+        use_dummy_tracks: bool,
+        include_track: bool,
+    ) -> tuple[dict, float, float]:
+        """Sequential GPU swap of backbone and tracker.
+
+        Models are kept in CPU RAM and moved to GPU one at a time.
+        """
+        # --- backbone: to GPU → run → back to CPU ---
+        self._reload_backbone()
+
+        torch.cuda.synchronize()
+        t0 = time.perf_counter()
+        predictions = self.local_inference.predict(batch)
+        torch.cuda.synchronize()
+        forward_time = time.perf_counter() - t0
+
+        self._unload_backbone()
+
+        # --- tracker: to GPU → run → back to CPU ---
+        track_time = 0.0
+        if include_track:
+            self._reload_tracker()
+
+            torch.cuda.synchronize()
+            t0 = time.perf_counter()
+            track_preds = self.track_inference.predict(
+                batch=batch,
+                use_dummy_tracks=use_dummy_tracks,
+            )
+            torch.cuda.synchronize()
+            track_time = time.perf_counter() - t0
+            predictions.update(track_preds)
+
+            self._unload_tracker()
 
         return predictions, forward_time, track_time
 
@@ -202,6 +290,8 @@ class StarInferencePipeline(BaseInferencePipeline):
             device=self.device,
             dtype=self.dtype,
             accelerator=models.get("_dvlt_accelerator"),
+            low_vram=getattr(self.args, "low_vram", False),
+            args=self.args,
         )
 
     def _run_batch_step(

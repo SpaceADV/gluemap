@@ -299,6 +299,17 @@ def get_args_parser() -> argparse.ArgumentParser:
         help="force the entire pipeline to run on CPU (ignores available GPUs)",
     )
 
+    parser.add_argument(
+        "--low_vram",
+        action=argparse.BooleanOptionalAction,
+        default=False,
+        help=(
+            "sequential load/unload of GPU models to reduce VRAM usage. "
+            "Loads the backbone and tracker one at a time during star "
+            "inference instead of keeping both in VRAM simultaneously."
+        ),
+    )
+
     return parser
 
 
