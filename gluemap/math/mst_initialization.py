@@ -48,6 +48,8 @@ def initialize_mst_structures(
     predictions_dict["median_tri_angle"] = {}
 
     for star_idx, idx in enumerate(indexes):
+        if not predictions_dict["indexes"][idx]:
+            continue
         node_idx_to_star_idx[predictions_dict["indexes"][idx][0]] = star_idx
 
         # Compute max of median triangulation angle across edges
@@ -86,6 +88,8 @@ def initialize_mst_structures(
         )
 
     for idx in indexes:
+        if not predictions_dict["indexes"][idx]:
+            continue
         poses = predictions_dict["extrinsics"][idx]
         pose_scores = predictions_dict["pose_scores"][idx]
         N_poses = poses.shape[1]

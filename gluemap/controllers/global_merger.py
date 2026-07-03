@@ -361,10 +361,13 @@ class GlobalGluer:
     ) -> list[np.ndarray | None]:
         """Run intrinsics averaging across all star predictions."""
         indexes = range(len(predictions_dict["indexes"]))
-        intrinsics_all = [
-            predictions_dict["intrinsics"][idx] for idx in indexes
-        ]
-        members = [predictions_dict["indexes"][idx] for idx in indexes]
+        intrinsics_all = []
+        members = []
+        for idx in indexes:
+            if not predictions_dict["indexes"][idx]:
+                continue
+            intrinsics_all.append(predictions_dict["intrinsics"][idx])
+            members.append(predictions_dict["indexes"][idx])
 
         global_intrinsics = intrinsics_averaging(
             intrinsics_all, members, intrinsics_mapping, camera_model
@@ -373,14 +376,22 @@ class GlobalGluer:
         return global_intrinsics
 
     def _prune_invisible_pairs(self, predictions_dict: dict) -> None:
-        """Drop neighbors with ``pose_scores <= 0`` from each star, in place."""
+        """Drop neighbors with ``pose_scores <= 0`` from each star, in place.
+
+        Always keeps the center image (index 0) even if its score is zero,
+        so ``indexes[idx]`` is never empty after pruning.
+        """
         indexes = range(len(predictions_dict["indexes"]))
         for idx in indexes:
-            if len(predictions_dict["indexes"][idx]) == 1:
+            if len(predictions_dict["indexes"][idx]) <= 1:
                 continue
             valid_edges_curr = (
                 torch.where(predictions_dict["pose_scores"][idx][0] > 0)[0]
             ).tolist()
+            # Always include the center image (position 0) to avoid
+            # creating empty index lists that crash downstream code.
+            if 0 not in valid_edges_curr:
+                valid_edges_curr.insert(0, 0)
             if (
                 len(valid_edges_curr)
                 == predictions_dict["pose_scores"][idx].shape[1]
@@ -476,6 +487,8 @@ class GlobalGluer:
         num_total = 0
         filtered_index = []
         for idx in indexes:
+            if not predictions_dict["indexes"][idx]:
+                continue
             extrinsics_global = self._global_relative_extrinsics(
                 predictions_dict, idx, global_rotations
             )
@@ -537,6 +550,8 @@ class GlobalGluer:
         num_total = 0
         predictions_dict["pose_inconsistent"] = {}
         for idx in indexes:
+            if not predictions_dict["indexes"][idx]:
+                continue
             translation_local = predictions_dict["extrinsics"][idx][
                 0, :, :3, 3
             ].double()
@@ -610,6 +625,8 @@ class GlobalGluer:
         num_boosted = 0
 
         for idx in indexes:
+            if not predictions_dict["indexes"][idx]:
+                continue
             center_idx = predictions_dict["indexes"][idx][0]
             for i, neighbor_idx in enumerate(predictions_dict["indexes"][idx]):
                 if i == 0:
