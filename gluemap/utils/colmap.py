@@ -795,6 +795,74 @@ def convert_to_colmap_format(
     return reconstruction
 
 
+def colorize_reconstruction(
+    reconstruction: pycolmap.Reconstruction,
+    images_path: str,
+    images_list: list[str] | None = None,
+) -> int:
+    """Sample point colors from observing images.
+
+    For each 3D point with zero (black) color, samples the pixel color from
+    each observing image at the 2D keypoint location and sets the median.
+
+    Args:
+        reconstruction: COLMAP reconstruction to colorize in place.
+        images_path: Directory containing the source images.
+        images_list: Optional list of image filenames to restrict lookup.
+
+    Returns:
+        Number of points whose color was updated.
+    """
+    from PIL import Image
+
+    images_path = Path(images_path)
+    image_files = None
+    if images_list is not None:
+        image_files = {Path(f).name for f in images_list}
+
+    image_cache: dict[str, Image.Image] = {}
+    points_updated = 0
+
+    for point3D in reconstruction.points3D.values():
+        if not np.all(point3D.color == 0):
+            continue
+
+        colors = []
+        for element in point3D.track.elements:
+            image_id = element.image_id
+            if image_id not in reconstruction.images:
+                continue
+            image = reconstruction.images[image_id]
+
+            if image_files is not None and image.name not in image_files:
+                continue
+
+            try:
+                if image.name not in image_cache:
+                    image_cache[image.name] = Image.open(
+                        images_path / image.name
+                    ).convert("RGB")
+                img = image_cache[image.name]
+
+                if element.point2D_idx >= len(image.points2D):
+                    continue
+                kp = image.points2D[element.point2D_idx]
+                x = max(0, min(int(round(kp.xy[0])), img.width - 1))
+                y = max(0, min(int(round(kp.xy[1])), img.height - 1))
+                colors.append(np.array(img.getpixel((x, y)), dtype=np.uint8))
+            except Exception:
+                continue
+
+        if colors:
+            point3D.color = np.median(colors, axis=0).astype(np.uint8)
+            points_updated += 1
+
+    # Free image cache
+    image_cache.clear()
+
+    return points_updated
+
+
 def write_to_colmap_format(
     dir_write: str,
     images_shape_ori: list[tuple[int, int]],

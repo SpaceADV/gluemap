@@ -27,6 +27,7 @@ from gluemap.math.reprojection_error import (
 )
 from gluemap.utils.colmap import (
     camera_from_intrinsics_matrix,
+    colorize_reconstruction,
     merge_colmap_databases,
     prepare_glomap_prior,
 )
@@ -529,6 +530,13 @@ def run_refinement_pipeline(
         args.curr_path + "/" + file_dir,
     )
     os.makedirs(args.curr_path + "/" + file_dir, exist_ok=True)
+
+    # Colorize points from source images before writing
+    num_colorized = colorize_reconstruction(
+        reconstruction, args.images_path, dataset_pair.images_list
+    )
+    logger.info(f"Colorized {num_colorized} points from source images")
+
     reconstruction.write(args.curr_path + "/" + file_dir)
     refinement_timing["write_output"] = time.perf_counter() - t0
 
