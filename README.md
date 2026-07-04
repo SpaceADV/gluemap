@@ -2,8 +2,8 @@
 
 > **This is a fork of [colmap/gluemap](https://github.com/colmap/gluemap)** with the following additions:
 >
-> - **DVLT backbone** — NVIDIA's [Deja View Looping Transformer](https://nv-tlabs.github.io/dvlt/) as a `chosen_model: dvlt` option. Uses `nvidia/dvlt` weights from HuggingFace Hub. Set `num_neighbors: 4` (one DINOv2 token per neighbor) for best results on 8 GB GPUs.
-> - **`--low_vram` mode** — sequential CPU↔GPU model swapping for GPUs with limited VRAM (tested on RTX 2080 8 GB). ~8 % overhead per batch from CPU transfers. Use with `--skip_doppelgangers` on ≤8 GB cards.
+> - **DVLT backbone** — NVIDIA's [Déjà View Looping Transformer](https://research.nvidia.com/labs/dvl/projects/dvlt/) as a `chosen_model: dvlt` option. Uses `nvidia/dvlt` weights from HuggingFace Hub.
+> - **`--low_vram` mode** — sequential CPU↔GPU model swapping for GPUs with limited VRAM (tested on 8 GB GPUs). Use with `--skip_doppelgangers` on 8 GB cards.
 > - **Point colorization** — output COLMAP reconstructions include per-point RGB colors sampled from observing images.
 > - **Bug fixes** — empty-neighbor-index crash in global merger, GPU OOM when COLMAP SIFT extraction follows feedforward inference, and other edge cases.
 
@@ -153,7 +153,7 @@ backbone needs its own `path_feedforward` checkpoint:
 - **`pi3x`** — Pi3X variant; same Pi3 checkpoint family.
 - **`vggt`** — Facebook VGGT-1B; download `model.pt` from
   HuggingFace `facebook/VGGT-1B`.
-- **`dvlt`** — NVIDIA DVLT (Deja View Looping Transformer); weights
+- **`dvlt`** — NVIDIA DVLT (Déjà View Looping Transformer); weights
   downloaded automatically from `nvidia/dvlt` on HuggingFace Hub.
 - **`map_anything`** — Facebook MapAnything; set
   `path_feedforward: facebook/map-anything` (HF repo id, not a file path).
@@ -182,6 +182,7 @@ Use the existing wrappers as references:
 
 - [gluemap/ff_inference/pi3_inference.py](gluemap/ff_inference/pi3_inference.py)
 - [gluemap/ff_inference/vggt_inference.py](gluemap/ff_inference/vggt_inference.py)
+- [gluemap/ff_inference/dvlt_inference.py](gluemap/ff_inference/dvlt_inference.py)
 - [gluemap/ff_inference/mapanything_inference.py](gluemap/ff_inference/mapanything_inference.py)
 
 Then register the new wrapper in `create_local_inference()` in
