@@ -1,4 +1,12 @@
 # GLUEMAP: Global Structure-from-Motion Meets Feedforward Reconstruction
+
+> **This is a fork of [colmap/gluemap](https://github.com/colmap/gluemap)** with the following additions:
+>
+> - **DVLT backbone** — NVIDIA's [Deja View Looping Transformer](https://nv-tlabs.github.io/dvlt/) as a `chosen_model: dvlt` option. Uses `nvidia/dvlt` weights from HuggingFace Hub. Set `num_neighbors: 4` (one DINOv2 token per neighbor) for best results on 8 GB GPUs.
+> - **`--low_vram` mode** — sequential CPU↔GPU model swapping for GPUs with limited VRAM (tested on RTX 2080 8 GB). ~8 % overhead per batch from CPU transfers. Use with `--skip_doppelgangers` on ≤8 GB cards.
+> - **Point colorization** — output COLMAP reconstructions include per-point RGB colors sampled from observing images.
+> - **Bug fixes** — empty-neighbor-index crash in global merger, GPU OOM when COLMAP SIFT extraction follows feedforward inference, and other edge cases.
+
 [Project page](https://lpanaf.github.io/cvpr26_gluemap/) | [Paper](https://arxiv.org/abs/2605.26103)
 ---
 
@@ -119,7 +127,8 @@ The most-touched knobs:
 | Key | Description |
 |---|---|
 | `images_path` / `write_path` | Input directory / output directory. |
-| `chosen_model` | Multi-view backbone: `pi3` (default), `pi3x`, `vggt`, `map_anything`. |
+| `chosen_model` | Multi-view backbone: `pi3` (default), `pi3x`, `vggt`, `map_anything`, `dvlt`. |
+| `--low_vram` | CLI flag: keep models in CPU RAM and swap to/from GPU per batch. Required for ≤8 GB GPUs. |
 | `path_feedforward` | Checkpoint for the chosen multi-view model. |
 | `path_retrieval` / `path_tracker` / `path_dg` | SALAD / VGGSfM / Doppelgangers++ checkpoints. |
 | `camera_model` | COLMAP camera model (default `SIMPLE_PINHOLE`). |
@@ -144,6 +153,8 @@ backbone needs its own `path_feedforward` checkpoint:
 - **`pi3x`** — Pi3X variant; same Pi3 checkpoint family.
 - **`vggt`** — Facebook VGGT-1B; download `model.pt` from
   HuggingFace `facebook/VGGT-1B`.
+- **`dvlt`** — NVIDIA DVLT (Deja View Looping Transformer); weights
+  downloaded automatically from `nvidia/dvlt` on HuggingFace Hub.
 - **`map_anything`** — Facebook MapAnything; set
   `path_feedforward: facebook/map-anything` (HF repo id, not a file path).
 
@@ -200,6 +211,7 @@ GLUEMAP stands on a stack of upstream feed-forward and geometry models:
 Multi-view feedforward backbones:
 - [Pi3](https://github.com/yyfz/Pi3) — multi-view pose estimation
 - [VGGT](https://github.com/facebookresearch/vggt) — multi-view geometry transformer
+- [DVLT](https://github.com/nv-tlabs/dvlt) — looping transformer for multi-view geometry
 - [MapAnything](https://github.com/facebookresearch/map-anything) — feed-forward 3D mapping
 
 ## Support
