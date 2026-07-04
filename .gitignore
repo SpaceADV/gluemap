@@ -50,3 +50,4 @@ htmlcov/
 .mypy_cache/
 .ruff_cache/
 thirdparty/doppelgangers-plusplus/dust3r/
+uv.lock
